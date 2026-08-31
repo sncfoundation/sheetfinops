@@ -13,6 +13,7 @@
 #   TOKEN=CHANGE_ME_super_secret
 # Requires: bash, curl, jq.
 set -euo pipefail
+export LC_ALL=C   # bc->printf %f is locale-sensitive; keep dot decimals
 here="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$here/.skctl.env" ] && . "$here/.skctl.env"
 WEBAPP_URL="${WEBAPP_URL:?set WEBAPP_URL (Apps Script /exec URL)}"
