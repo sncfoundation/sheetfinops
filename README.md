@@ -31,3 +31,21 @@ Everything starts as an **Unsaved Draft**. It reconciles up the tiers from there
 ---
 
 <sub>Licensed under Apache-2.0. The SNCF does not recommend running production on a spreadsheet. If you do, please film it.</sub>
+
+
+## Usage
+
+```bash
+# full $0 FinOps report (+ estimated avoided cloud spend)
+./sheetfinops
+./sheetfinops --rate 0.031 --mem-rate 0.005
+```
+
+Config via a `.skctl.env` (same as `skctl`): `WEBAPP_URL`, `TOKEN`. Requires `curl`, `jq`, `bc`.
+
+## What it reports
+
+- Per-Deployment replicas, requested vCPU and memory (summed across replicas).
+- The itemized infrastructure bill: **$0** (control plane, storage, egress).
+- An estimate of what the same workload would cost on a real cloud — your **avoided spend**.
+

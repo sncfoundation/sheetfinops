@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#
+# SheetFinOps — the $0 FinOps dashboard for Sheeternetes (our OpenCost / Kubecost).
+# Queries the cluster and prints an itemized cost report. Infrastructure spend is $0,
+# because the control plane is a Google Sheet. We also estimate what the same workload
+# would have cost on a real cloud — the "avoided spend" you get to brag about.
+#
+#   sheetfinops                 # full report
+#   sheetfinops --rate 0.021    # $/vCPU-hour used for the avoided-cost estimate
+#
+# Config (env or a .skctl.env next to this script), same as skctl:
+#   WEBAPP_URL=https://script.google.com/macros/s/XXXX/exec
+#   TOKEN=CHANGE_ME_super_secret
+# Requires: bash, curl, jq.
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+[ -f "$here/.skctl.env" ] && . "$here/.skctl.env"
+WEBAPP_URL="${WEBAPP_URL:?set WEBAPP_URL (Apps Script /exec URL)}"
+TOKEN="${TOKEN:-CHANGE_ME_super_secret}"
+RATE="0.021"   # $/vCPU-hour, a typical on-demand small-instance rate
+MEM_RATE="0.004" # $/GiB-hour
+while [ $# -gt 0 ]; do case "$1" in --rate) RATE="$2"; shift 2;; --mem-rate) MEM_RATE="$2"; shift 2;; *) shift;; esac; done
+
+api_get() { curl -fsSL -m 30 "$WEBAPP_URL?token=$TOKEN&kind=$1"; }
+deps="$(api_get deployments)"
+
+echo "SheetFinOps report — $(date -u +%Y-%m-%dT%H:%MZ)"
+echo "======================================================"
+printf "%-20s %8s %8s %10s\n" "DEPLOYMENT" "REPLICAS" "vCPU" "MEM(GiB)"
+echo "$deps" | jq -r '.items[] | [.name, (.replicas//0), ((.cpu_req//0)*(.replicas//0)), ((.mem_req//0)*(.replicas//0))] | @tsv' | \
+  while IFS=$'\t' read -r name reps mcpu mmem; do
+    printf "%-20s %8s %8.2f %10.2f\n" "$name" "$reps" "$(echo "scale=2;$mcpu/1000"|bc)" "$(echo "scale=2;$mmem/1024"|bc)"
+  done
+
+# totals (millicores, MiB), summed over replicas
+read tot_cpu tot_mem tot_reps < <(echo "$deps" | jq -r '[.items[]|{c:((.cpu_req//0)*(.replicas//0)),m:((.mem_req//0)*(.replicas//0)),r:(.replicas//0)}] | (map(.c)|add // 0), (map(.m)|add // 0), (map(.r)|add // 0)' | paste -sd' ' -)
+vcpu="$(echo "scale=3;$tot_cpu/1000"|bc)"; gib="$(echo "scale=3;$tot_mem/1024"|bc)"
+mo_cpu="$(echo "scale=2;$vcpu*$RATE*730"|bc)"; mo_mem="$(echo "scale=2;$gib*$MEM_RATE*730"|bc)"
+avoided="$(echo "scale=2;$mo_cpu+$mo_mem"|bc)"
+
+echo "------------------------------------------------------"
+printf "Totals: %s replicas · %s vCPU · %s GiB\n" "$tot_reps" "$vcpu" "$gib"
+echo ""
+echo "  Control-plane cost .......... \$0.00   (it's a spreadsheet)"
+echo "  Storage cost ................ \$0.00   (cells are free)"
+echo "  Egress cost ................. \$0.00   (there is no egress)"
+echo "  ------------------------------------"
+echo "  TOTAL INFRASTRUCTURE BILL ... \$0.00 / month"
+echo ""
+printf "  Estimated cost on a real cloud: ~\$%s/mo (compute \$%s + memory \$%s)\n" "$avoided" "$mo_cpu" "$mo_mem"
+printf "  💸 Avoided spend (your bragging rights): ~\$%s / month\n" "$avoided"
+echo ""
+echo "FinOps recommendation: none. You are already at \$0. It reconciles, profitably."
