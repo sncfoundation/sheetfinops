@@ -9,7 +9,7 @@ A <a href="https://sncfoundation.github.io">Sheet-Native Computing Foundation</a
 
 ---
 
-**Status:** 📝 Unsaved Draft &#183; this project is a proposal. Design notes and contributions are welcome.
+**Status:** 💾 Autosaving &#183; promoted from Unsaved Draft. Working code, released as [v0.1.0](https://github.com/sncfoundation/sheetfinops/releases/tag/v0.1.0), and the [tracking issue #13](https://github.com/sncfoundation/sheeternetes/issues/13) is closed. Google keeps saving it.
 
 ## About
 
@@ -17,7 +17,7 @@ A \$0 infrastructure cost dashboard Part of the spreadsheet-native stack — the
 
 ## Get involved
 
-- 📋 Tracking issue &amp; design: [sncfoundation/sheeternetes#13](https://github.com/sncfoundation/sheeternetes/issues/13)
+- 📋 Tracking issue &amp; design: [sncfoundation/sheeternetes#13](https://github.com/sncfoundation/sheeternetes/issues/13) (closed)
 - 🗺️ [SNCF Landscape](https://sncfoundation.github.io/landscape.html)
 - 🧩 [All projects](https://sncfoundation.github.io/projects.html)
 - ⚖️ [Governance &amp; how to contribute](https://github.com/sncfoundation/governance)
